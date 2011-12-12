@@ -5,7 +5,7 @@
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "git@vic.norran.se:whoisit.git"
+    "url": "git@github.com:victorjonsson/dokimon.git"
   },
   "main": "./dokimon",
   "bin" : "./cli",
