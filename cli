@@ -45,8 +45,12 @@ var dokimon = require('./dokimon'),
 // Separate requested scripts from arguments
 if(process.argv.length > 3) {
     for(i=3; i < process.argv.length; i++) {
+
+        // argument
         if(process.argv[i].substring(0,1) == '-') {
-            var argVal = '';
+            var argVal = true;
+
+            // requires val
             if(arraySearch(process.argv[i], argsRequiringValue) !== false) {
                 if(process.argv[i+1] == undefined) {
                     console.log('Value for argument '+process.argv[i]+' missing');
@@ -54,15 +58,21 @@ if(process.argv.length > 3) {
                 }
                 argVal = process.argv[i+1];
             }
+            else if(arraySearch(process.argv[i], availableArgs) === false) {
+                console.log('Unknown argument '+process.argv[i]);
+                process.exit(0);
+            }
+
             args[process.argv[i]] = argVal;
-            if(argVal)
+            if(argVal !== true) // value given from command line
                 i++;
         }
+
+        // script
         else
             scripts.push(process.argv[i]);
     }
 }
-
 
 // Load configuration and override configuration variables with command line args
 if(command != COMMAND.HELP && command != COMMAND.HELP_SHORT) {
@@ -76,6 +86,8 @@ if(command != COMMAND.HELP && command != COMMAND.HELP_SHORT) {
             config[ argsRequiringValue[i].substr(1, argsRequiringValue[i].length) ] = args[argsRequiringValue[i]];
     }
     config.testdir = fixPath(config.testdir);
+    if(args[COMMAND.ARG_VERBOSE] != undefined)
+        config.verbose = true;
 
     var testManager = new dokimon.TestManager(config);
 }
@@ -95,7 +107,10 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
         else {
             var testFileName = testManager.scriptNameToPath(process.argv[3]);
             console.log('# Will run '+testFileName+'::'+process.argv[4]);
-            testManager.setTests(require(testFileName));
+            var t = require(testFileName);
+            if(t instanceof dokimon.Test)
+                t = [t];
+            testManager.setTests(t);
             testManager.runTest(process.argv[4]);
         }
     }
@@ -105,15 +120,17 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
         console.log('##-> RUNNING ALL TESTS');
         testManager.loadScriptsInDir(config.testdir).forEach(function(script) {
             console.log('# Will run '+script);
-            var t = require(config.testdir+'/'+script+dokimon.TEST_EXTENSION);
-            for(var j=0; j < t.tests.length; j++)0
-            collectedTests.push( t.tests[j] );
+            var t = require(config.testdir +'/'+ script + dokimon.TEST_EXTENSION);
+            if(t instanceof dokimon.Test)
+                t = [t];
+            for(var j=0; j < t.length; j++)
+                collectedTests.push( t[j] );
         });
         testManager.setTests(collectedTests);
         testManager.run();
     }
 
-    // Run all scripts
+    // Run tests in specified scripts
     else {
         for(i=0; i < scripts.length; i++) {
             try {
@@ -122,7 +139,7 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
                 var t = require(testFileName);
                 if(!(t instanceof dokimon.Test)) {
                     for(var j=0; j < t.length; j++)
-                        collectedTests.push( t.tests[j] );
+                        collectedTests.push( t[j] );
                 }
                 else
                     collectedTests.push(t);
@@ -185,18 +202,18 @@ else if(command == COMMAND.SHOW) {
  */
 else if(command == COMMAND.HELP_SHORT || command == COMMAND.HELP) {
     console.log('More help available at https://github.com/victorjonsson/dokimon/');
-    console.log('Usage dokimon [command] [script | scripts] [arguments]');
+    console.log("Usage:\ndokimon [command] [script | scripts] [arguments]");
     console.log('');
     console.log('Commands:');
     console.log('-r\tRun all scripts or one specified script (e.g. "dokimon -r" or "dokimon -r myscript")');
     console.log('-rs\tRun a specific test (e.g. "dokimon -rs myscript sometest")');
-    console.log('-l\tList all test scripts and containing tests');
+    console.log('-l\tList all available test scripts and containing tests');
     console.log('-s\tList all tests in specified script (e.g. "dokimon -s myscript")');
     console.log('');
     console.log('Optional arguments:');
     console.log('-verbose\tGet a more verbose output when running tests');
     console.log('-host   \tOverride the host defined in config.json (e.g. "dokimon -r -host test.mysite.com")');
-    console.log('-testdir\tUse another test directory then the one defined in config.json (e.g. "dokimon -r -testdir test/production/")');
+    console.log('-testdir\tUse another test directory than the one defined in config.json (e.g. "dokimon -r -testdir ./test/production/")');
     console.log('-config \tUse another config file then the one that is automatically loaded by dokimon');
     console.log('');
 }

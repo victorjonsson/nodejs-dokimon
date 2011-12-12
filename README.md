@@ -38,7 +38,7 @@ will search for a file named config.json in current working directory if not spe
 {
   "host" : "api.myservice.com",
   "verbose" : false,
-  "testdir" : "./tests"
+  "testdir" : "/Users/john/projects/dokimontests"
 }
 
 ```

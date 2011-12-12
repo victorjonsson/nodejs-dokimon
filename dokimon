@@ -162,10 +162,10 @@ var TestManager = function(config, testFinishCallback) {
     };
 
     /**
-     * @param {Test[]|Test} tests
+     * @param {Test[]} tests
      */
     this.setTests = function(tests) {
-        this.tests = util.isArray(tests) ? tests:[tests];
+        this.tests = tests;
     };
 
     /**
@@ -320,11 +320,11 @@ var Test = function(testName, options, callback, blocking) {
     this.name = testName;
 
     /**
-     * @param {TestManager} testManager
+     * @param {TestManager} manager
      * @param {Boolean} verbose - Optional
      * @param {Function} exeFinishCallback - Optional, will be called when request is finished and test callback is called
      */
-    this.execute = function(host, testManager, verbose, exeFinishCallback) {
+    this.execute = function(host, manager, verbose, exeFinishCallback) {
 
         options.host = host;
 
@@ -339,21 +339,21 @@ var Test = function(testName, options, callback, blocking) {
             });
             res.on('end', function() {
                 try {
-                   callback(res, collectedBody, verbose);
-                   testManager.registerSuccessfullTest({name : testName, message:''});
-                   if(typeof exeFinishCallback == 'function')
-                       exeFinishCallback();
-               }
-               catch(e) {
-                   testManager.registerFailedtest({name : testName, message:e.message}, e);
-                   if(typeof exeFinishCallback == 'function')
-                      exeFinishCallback();
-               }
+                    callback(res, collectedBody, verbose);
+                    manager.registerSuccessfullTest({name : testName, message:''});
+                    if(typeof exeFinishCallback == 'function')
+                        exeFinishCallback();
+                }
+                catch(e) {
+                    manager.registerFailedtest({name : testName, message:e.message}, e);
+                    if(typeof exeFinishCallback == 'function')
+                        exeFinishCallback();
+                }
             });
         });
 
         req.on('error', function(e) {
-            testManager.registerFailedtest({name : testName, message:''}, e);
+            manager.registerFailedtest({name : testName, message:''}, e);
         });
 
         req.write(options.write);
