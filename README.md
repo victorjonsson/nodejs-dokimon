@@ -48,7 +48,7 @@ will search for a file named config.json in current working directory if not spe
 Lorem te ipsum
 
 ## CLI
-  - <strong>-r</strong> Run all test scripts residing in your test directory
+  - <strong>-r</strong> Run all test scripts residing in your test directory or 
   - <strong>-rs</strong> Run
   - <strong>-l</strong> Lorem
   - <strong>-s</strong> Lorem
