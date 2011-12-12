@@ -1,0 +1,410 @@
+var filesystem = require('fs'),
+    util = require('util'),
+    querystring = require('querystring');
+
+/**
+ * Utility function for extending object properties
+ * @author tanepiper (github)
+ */
+function extend() {
+
+    var toString = Object.prototype.toString,
+    	hasOwn = Object.prototype.hasOwnProperty,
+    	// [[Class]] -> type pairs
+    	class2type = {};
+
+    // Populate the class2type map
+    "Boolean Number String Function Array Date RegExp Object".split(" ").forEach(function(name) {
+    	class2type[ "[object " + name + "]" ] = name.toLowerCase();
+    });
+
+    function type(obj){
+    	return obj == null ?
+    			String( obj ) :
+    			class2type[ toString.call(obj) ] || "object";
+    }
+
+    function isPlainObject( obj ) {
+    	if ( !obj || type(obj) !== "object") {
+    		return false;
+    	}
+
+    	// Not own constructor property must be Object
+    	if ( obj.constructor &&
+    		!hasOwn.call(obj, "constructor") &&
+    		!hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
+    		return false;
+    	}
+
+    	// Own properties are enumerated firstly, so to speed up,
+    	// if last one is own, then all properties are own.
+
+    	var key;
+    	for ( key in obj ) {}
+
+    	return key === undefined || hasOwn.call( obj, key );
+    }
+
+	var options, name, src, copy, copyIsArray, clone,
+		target = arguments[0] || {},
+		i = 1,
+		length = arguments.length,
+		deep = false;
+
+	// Handle a deep copy situation
+	if ( typeof target === "boolean" ) {
+		deep = target;
+		target = arguments[1] || {};
+		// skip the boolean and the target
+		i = 2;
+	}
+
+	// Handle case when target is a string or something (possible in deep copy)
+	if ( typeof target !== "object" && type(target) !== "function") {
+		target = {};
+	}
+
+	// extend jQuery itself if only one argument is passed
+	if ( length === i ) {
+		target = this;
+		--i;
+	}
+
+	for ( ; i < length; i++ ) {
+		// Only deal with non-null/undefined values
+		if ( (options = arguments[ i ]) != null ) {
+			// Extend the base object
+			for ( name in options ) {
+				src = target[ name ];
+				copy = options[ name ];
+
+				// Prevent never-ending loop
+				if ( target === copy ) {
+					continue;
+				}
+
+				// Recurse if we're merging plain objects or arrays
+				if ( deep && copy && ( isPlainObject(copy) || (copyIsArray = type(copy) === "array") ) ) {
+					if ( copyIsArray ) {
+						copyIsArray = false;
+						clone = src && type(src) === "array" ? src : [];
+
+					} else {
+						clone = src && isPlainObject(src) ? src : {};
+					}
+
+					// Never move original objects, clone them
+					target[ name ] = extend( deep, clone, copy );
+
+				// Don't bring in undefined values
+				} else if ( copy !== undefined ) {
+					target[ name ] = copy;
+				}
+			}
+		}
+	}
+
+	// Return the modified object
+	return target;
+}
+
+/**
+ * @param {Object} options
+ * @return {Object}
+ */
+function mergeWithDefaultOptions(options) {
+    var o = extend({
+            port : 80,
+            method : 'GET',
+            headers : {},
+            write : ''
+        }, options);
+    if(o.headers['Content-Length'] == undefined && typeof o.write == 'string')
+        o.headers['Content-Length'] = Buffer.byteLength(o.write, 'utf8');
+
+    if(o.url == undefined)
+        throw new Error('property url missing from options');
+    if(typeof o.url == 'object')
+        o.path = querystring.stringify(o.url);
+    else
+        o.path = o.url;
+
+    if(o.headers['User-Agent'] == undefined)
+        o['User-Agent'] = 'node dokimon 0.1';
+
+    return o;
+}
+
+
+/** * * * * * * * * * * * * * * * * * * * * * * * *
+ * @class {TestManager}
+ * @param {Object} config
+ * @param {Function} testFinishCallback - Optional
+ * * * * * * * * * * * * * * * * * * * * * * * * */
+var TestManager = function(config, testFinishCallback) {
+
+    this.index = 0;
+    this.successes = [];
+    this.fails = [];
+    this.tests = [];
+
+    /**
+     * Wrapper that makes it possible to handle the
+     * message with something other then console.log
+     *
+     * @param {String} message
+     */
+    this.log = function(message) {
+        if(config.log)
+            config.log(message);
+        else
+            console.log(message);
+    };
+
+    /**
+     * @param {Test[]|Test} tests
+     */
+    this.setTests = function(tests) {
+        this.tests = util.isArray(tests) ? tests:[tests];
+    };
+
+    /**
+     * Runs tests starting from current position of this.index
+     */
+    this.run = function() {
+        if(config.verbose)
+            this.log('Running scripts starting from '+this.index);
+
+        for(var i=this.index; i < this.tests.length; i++) {
+            // blocking request
+            if(this.tests[i].blocking) {
+                if(config.verbose)
+                    this.log('Blocking upcoming tests on index '+i);
+
+                this.index = i+1;
+                var self = this;
+                this.tests[i].execute(config.host, this, config.verbose, function() {
+                    self.run();
+                });
+                break;
+            }
+            else
+                this.tests[i].execute(config.host, this, config.verbose);
+        }
+    };
+
+    /**
+     * Run a specific test in the test list
+     *
+     * @param {String} testName
+     * @param {Boolean} verbose - Optional
+     */
+    this.runTest = function(testName, verbose) {
+        for(var i=0; i < this.tests.length; i++) {
+            if(this.tests[i].name == testName) {
+                this.tests[i].execute(config.host, this, verbose);
+                return;
+            }
+        }
+
+        throw new Error('Test not found');
+    };
+
+    /**
+     * @param {Object} success
+     */
+    this.registerSuccessfullTest = function(success) {
+        this.successes.push(success);
+        this.log('* '+success.name + ' successfull');
+        _checkIfFinished(this);
+    };
+
+    /**
+     * @param {Object} fail
+     * @param {Error} err - Optional
+     */
+    this.registerFailedtest = function(fail, err) {
+        this.fails.push(fail);
+        this.log('- '+fail.name + " FAILED! \n"+fail.message);
+        if(err)
+            this.log(err);
+        _checkIfFinished(this);
+    };
+
+    /**
+     * Get the correct path to script. Throws error if not exists
+     *
+     * @param {String} name
+     * @return {String}
+     */
+    this.scriptNameToPath = function(name) {
+        var testFileName = name.substring(0, config.testdir.length) == config.testdir ? name : config.testdir+'/'+name;
+        if(!_hasDokimonExtension(testFileName))
+            testFileName += TestManager.TEST_EXTENSION;
+
+        var firsLetter = testFileName.substr(0,1);
+        if(firsLetter != '.' && firsLetter != '/')
+            testFileName = './'+testFileName;
+
+        return testFileName;
+    };
+
+    /**
+     * Get a list of all available scripts in given directory
+     *
+     * @param {String} path
+     * @return {Array}
+     */
+    this.loadScriptsInDir = function(path) {
+        var scripts = [];
+        filesystem.readdirSync(path).forEach(function(f) {
+            if(_hasDokimonExtension(f))
+                scripts.push(f.substr(0, f.length - TestManager.TEST_EXTENSION.length));
+        });
+        return scripts;
+    };
+
+    /**
+     * Will output test result to client when test i finished
+     *
+     * @access private
+     * @param {TestManager} manager
+     */
+    var _checkIfFinished = function(manager) {
+        if(manager.tests.length == (manager.successes.length + manager.fails.length)) {
+            if(manager.fails.length == 0) {
+                manager.log("\n------------------------------\nEverything is fine :)");
+                manager.log('Executed a total of '+manager.successes.length+' successfull tests');
+            }
+            else {
+                manager.log("\n------------------------------\nAll is not well :(");
+                manager.log(manager.fails.length+' test'+(manager.fails.length > 1 ? 's':'')+' failed');
+                manager.log(manager.successes.length+' test'+(manager.successes.length > 1 ? 's':'')+' was successfull');
+            }
+
+            manager.log("");
+            if(typeof testFinishCallback == 'function')
+                testFinishCallback(manager);
+        }
+    };
+
+    /**
+     * @access private
+     * @param {String} path
+     * @return {Boolean}
+     */
+    var _hasDokimonExtension = function(path) {
+        return path.substr(-1 * TestManager.TEST_EXTENSION.length) == TestManager.TEST_EXTENSION;
+    };
+};
+
+
+/**
+ * Extension for scripts containing tests
+ */
+TestManager.TEST_EXTENSION = '.dokimon';
+
+
+/** * * * * * * * * * * * * * * * * * * * * * * * *
+ * @class {Test}
+ * @param {String} testName - Name of this test
+ * @param {Object} options - requires url, optional is port:Number, method:String, write:String and headers:Object
+ * @param {Function} callback - function(response, body)
+ * @param {Boolean} blocking - Optional, whether or not this test is supposed to finish before running any other tests
+ * * * * * * * * * * * * * * * * * * * * * * * * */
+var Test = function(testName, options, callback, blocking) {
+
+    options = mergeWithDefaultOptions(options);
+
+    this.blocking = blocking;
+    this.name = testName;
+
+    /**
+     * @param {TestManager} testManager
+     * @param {Boolean} verbose - Optional
+     * @param {Function} exeFinishCallback - Optional, will be called when request is finished and test callback is called
+     */
+    this.execute = function(host, testManager, verbose, exeFinishCallback) {
+
+        options.host = host;
+
+        if(verbose)
+            manager.log("About to request "+host+" for \n"+JSON.stringify(options).replace(/\,\"/g, ",\n\"")+"\n");
+
+        var req = require('http').request(options, function(res) {
+            var collectedBody = '';
+            res.setEncoding('utf8');
+            res.on('data', function (body) {
+                collectedBody += body;
+            });
+            res.on('end', function() {
+                try {
+                   callback(res, collectedBody, verbose);
+                   testManager.registerSuccessfullTest({name : testName, message:''});
+                   if(typeof exeFinishCallback == 'function')
+                       exeFinishCallback();
+               }
+               catch(e) {
+                   testManager.registerFailedtest({name : testName, message:e.message}, e);
+                   if(typeof exeFinishCallback == 'function')
+                      exeFinishCallback();
+               }
+            });
+        });
+
+        req.on('error', function(e) {
+            testManager.registerFailedtest({name : testName, message:''}, e);
+        });
+
+        req.write(options.write);
+        req.end();
+    };
+};
+
+
+/** * * * * * * * * * * * * * * * * * * * * * * * *
+ * @class {TestFormPost}
+ * @param {String} testName - Name of this test
+ * @param {Object} options - requires url, optional is port:Number, method:String, write:String and headers:Object
+ * @param {Function} callback - function(response, body)
+ * @param {Boolean} blocking - Optional, whether or not this test is supposed to finish before running any other tests
+ * * * * * * * * * * * * * * * * * * * * * * * * */
+var TestFormPost = function(testName, options, callback, blocking) {
+
+    options = mergeWithDefaultOptions(options);
+    options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    if(typeof(options.write) == 'object')
+        options.write = querystring.stringify(options.write);
+
+    options.headers['Content-Length'] = Buffer.byteLength(options.write, 'utf8');
+
+    this.blocking = blocking;
+    this.name = testName;
+};
+util.inherits(TestFormPost, Test);
+
+
+module.exports = {
+
+    /**
+     * @param {Object} config
+     * @return {TestManager}
+     */
+    TestManager :  TestManager,
+
+    /**
+     * @return {Test}
+     */
+    Test : Test,
+
+    /**
+     * @param {Test} t
+     */
+    runTest : function(t, config, testFinishCallback) {
+        var manager = new TestManager(config, testFinishCallback);
+        manager.setTests([t]);
+        manager.run();
+    },
+
+    TEST_EXTENSION : TestManager.TEST_EXTENSION
+};

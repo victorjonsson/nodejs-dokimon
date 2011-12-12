@@ -1,0 +1,195 @@
+#!/usr/bin/node
+var dokimon = require('./dokimon'),
+    fs = require('fs'),
+    i = 0,
+    args = {},
+    scripts = [],
+    config = {},
+    COMMAND = {
+        RUN : '-r',
+        RUN_SPECIFIED : '-rs',
+        LIST : '-l',
+        HELP : '-help',
+        SHOW : '-s',
+        HELP_SHORT : '-h',
+        ARG_CONFIG : '-config',
+        ARG_HOST : '-host',
+        ARG_VERBOSE : '-verbose',
+        ARG_TEST_DIR : '-testdir'
+    },
+    availableArgs = [
+        COMMAND.ARG_CONFIG,
+        COMMAND.ARG_HOST,
+        COMMAND.ARG_TEST_DIR,
+        COMMAND.ARG_VERBOSE
+    ],
+    argsRequiringValue = [
+        COMMAND.ARG_CONFIG,
+        COMMAND.ARG_HOST,
+        COMMAND.ARG_TEST_DIR
+    ],
+    arraySearch = function(find, arr) {
+        for(var i=0; i < arr.length; i++) {
+            if(arr[i] == find)
+                return i;
+        }
+        return false;
+    },
+    fixPath = function(path) {
+        var fl = path.substr(0,1);
+        return fl == '.' || fl == '/' ? path : './'+path;
+    },
+    command = process.argv.length > 2 ? process.argv[2]:COMMAND.HELP;
+
+
+// Separate requested scripts from arguments
+if(process.argv.length > 3) {
+    for(i=3; i < process.argv.length; i++) {
+        if(process.argv[i].substring(0,1) == '-') {
+            var argVal = '';
+            if(arraySearch(process.argv[i], argsRequiringValue) !== false) {
+                if(process.argv[i+1] == undefined) {
+                    console.log('Value for argument '+process.argv[i]+' missing');
+                    process.exit();
+                }
+                argVal = process.argv[i+1];
+            }
+            args[process.argv[i]] = argVal;
+            if(argVal)
+                i++;
+        }
+        else
+            scripts.push(process.argv[i]);
+    }
+}
+
+
+// Load configuration and override configuration variables with command line args
+if(command != COMMAND.HELP && command != COMMAND.HELP_SHORT) {
+    if(args[COMMAND.ARG_CONFIG] == undefined)
+        args[COMMAND.ARG_CONFIG] = './config.json';
+    args[COMMAND.ARG_CONFIG] = fixPath(args[COMMAND.ARG_CONFIG]);
+
+    config = JSON.parse(fs.readFileSync(args['-config']));
+    for(i = 0; i < argsRequiringValue.length; i++) {
+        if(args[argsRequiringValue[i]] != undefined)
+            config[ argsRequiringValue[i].substr(1, argsRequiringValue[i].length) ] = args[argsRequiringValue[i]];
+    }
+    config.testdir = fixPath(config.testdir);
+
+    var testManager = new dokimon.TestManager(config);
+}
+
+
+/*
+ * RUN TESTS
+ */
+if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
+
+    var collectedTests = [];
+
+    // Run specified test
+    if(command == COMMAND.RUN_SPECIFIED) {
+        if(process.argv.length < 5)
+            console.log('To few arguments, dokimon %s myscript MyTestFunction', COMMAND.RUN_SPECIFIED);
+        else {
+            var testFileName = testManager.scriptNameToPath(process.argv[3]);
+            console.log('# Will run '+testFileName+'::'+process.argv[4]);
+            testManager.setTests(require(testFileName));
+            testManager.runTest(process.argv[4]);
+        }
+    }
+
+    // Run all scripts
+    else if(scripts.length == 0) {
+        console.log('##-> RUNNING ALL TESTS');
+        testManager.loadScriptsInDir(config.testdir).forEach(function(script) {
+            console.log('# Will run '+script);
+            var t = require(config.testdir+'/'+script+dokimon.TEST_EXTENSION);
+            for(var j=0; j < t.tests.length; j++)0
+            collectedTests.push( t.tests[j] );
+        });
+        testManager.setTests(collectedTests);
+        testManager.run();
+    }
+
+    // Run all scripts
+    else {
+        for(i=0; i < scripts.length; i++) {
+            try {
+                var testFileName = testManager.scriptNameToPath(scripts[i]);
+                console.log('# Will run '+testFileName);
+                var t = require(testFileName);
+                if(!(t instanceof dokimon.Test)) {
+                    for(var j=0; j < t.length; j++)
+                        collectedTests.push( t.tests[j] );
+                }
+                else
+                    collectedTests.push(t);
+            }
+            catch(e) {
+                if(e.message.indexOf('No such file or directory') > -1) {
+                    console.log(scripts[i] +' not found');
+                    if(i > 0) {
+                        console.log("Did you maybe mean to use "+COMMAND.RUN_SPECIFIED+" instead of "+COMMAND.RUN+"? \n" +
+                                    "example: dokimon "+COMMAND.RUN_SPECIFIED+" "+scripts[i-1]+' '+scripts[i]);
+                    }
+                    process.exit(0);
+                }
+                else
+                    throw e;
+            }
+        }
+
+        if(collectedTests.length == 0)
+            console.log('No tests exist!');
+        else {
+            testManager.setTests(collectedTests);
+            testManager.run();
+        }
+    }
+}
+
+/*
+ * LIST AVAILABLE TEST SCRIPTS
+ */
+else if(command == COMMAND.LIST) {
+    testManager.loadScriptsInDir(config.testdir).forEach(function(script) {
+        console.log(script);
+        var t = require(config.testdir+'/'+script+dokimon.TEST_EXTENSION);
+        if(t instanceof dokimon.Test)
+            t = [t];
+        for(var j=0; j < t.length; j++)
+            console.log("  - "+t[j].name)
+    });
+}
+
+/*
+ * SHOW TESTS IN SCRIPT
+ */
+else if(command == COMMAND.SHOW) {
+    if(process.argv.length < 4) {
+        console.log('To few arguments, dokimon '+COMMAND.SHOW+' myscript');
+    }
+    else {
+        var t = require(testManager.scriptNameToPath(process.argv[3]));
+        if(t instanceof dokimon.Test)
+            t = [t];
+        for(var j=0; j < t.length; j++)
+            console.log("  - "+t[j].name);
+    }
+}
+
+/*
+ * SHOW HELP INFO
+ */
+else if(command == COMMAND.HELP_SHORT || command == COMMAND.HELP) {
+    console.log('this is help ...');
+}
+
+/*
+ * COMMAND NOT FOUND
+ */
+else {
+    console.log("Command does not exist, try "+COMMAND.HELP);
+}

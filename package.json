@@ -1,0 +1,17 @@
+{
+  "author": "Victor Jonsson <kontakt@victorjonsson.se> (http://victorjonsson.se)",
+  "name": "dokimon",
+  "description": "A simple framework that is used for test automation. Write tests for a website or web service and manage them with a command line interface",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git@vic.norran.se:whoisit.git"
+  },
+  "main": "./dokimon",
+  "bin" : "./cli",
+  "engines": {
+    "node": ">=0.4.11"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
