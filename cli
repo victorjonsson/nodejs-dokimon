@@ -184,7 +184,21 @@ else if(command == COMMAND.SHOW) {
  * SHOW HELP INFO
  */
 else if(command == COMMAND.HELP_SHORT || command == COMMAND.HELP) {
-    console.log('this is help ...');
+    console.log('More help available at https://github.com/victorjonsson/dokimon/');
+    console.log('Usage dokimon [command] [script | scripts] [arguments]');
+    console.log('');
+    console.log('Commands:');
+    console.log('-r\tRun all scripts or one specified script (e.g. "dokimon -r" or "dokimon -r myscript")');
+    console.log('-rs\tRun a specific test (e.g. "dokimon -rs myscript sometest")');
+    console.log('-l\tList all test scripts and containing tests');
+    console.log('-s\tList all tests in specified script (e.g. "dokimon -s myscript")');
+    console.log('');
+    console.log('Optional arguments:');
+    console.log('-verbose\tGet a more verbose output when running tests');
+    console.log('-host   \tOverride the host defined in config.json (e.g. "dokimon -r -host test.mysite.com")');
+    console.log('-testdir\tUse another test directory then the one defined in config.json (e.g. "dokimon -r -testdir test/production/")');
+    console.log('-config \tUse another config file then the one that is automatically loaded by dokimon');
+    console.log('');
 }
 
 /*
