@@ -22,7 +22,8 @@ Create a directory where you find suitable, go to the directory in your shell in
 You write your tests in files that has the extension .dokimon...
 
 ### 3) config.json
-This file should contain a JSON object with the properties "host", "verbose" and "testdir". 
+This file should be placed in the root of your project directory and contain a JSON object with 
+the properties "host", "verbose" and "testdir". 
 
   - <strong>host</strong> (String) —  Specifies against which host you're going to run the tests. 
   - <strong>verbose</strong> (Boolean) — Makes it possible to get a more verbose output when running the tests
@@ -43,9 +44,19 @@ will search for a file named config.json in current working directory if not spe
 }
 ```
 
+<strong>Example project layout</strong>
+
+```
+/Users/john/nodetests/
+    tests/
+      - myscript.dokimon
+    - config.json
+```
+
 ## Writing tests
 
-Lorem te ipsum
+You can have one or several test scripts, each containing one or several tests. All test script should have
+the extension <em>.dokimon</em>. The test script is written as ordinary node modules. Basic example:
 
 ## CLI
   - <strong>-r</strong> Run all test scripts residing in your test directory or 
