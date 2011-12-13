@@ -55,25 +55,52 @@ will search for a file named config.json in current working directory if not spe
 
 ## Writing tests
 
-You can have one or several test scripts, each containing one or several tests. All test script should have
-the extension <em>.dokimon</em>. The test script is written as ordinary node modules. 
+You can have one or several dokimon scripts, each containing one or several tests. All dokimon scripts should have
+the extension <em>.dokimon</em>. The scripts is written as ordinary node modules (http://howtonode.org/creating-custom-modules). 
 
-<strong>Basic example, check that my website is up running</strong>
+<strong>Basic example</strong>
 
 ```js
 var dokimon = require('dokimon'),
     assert = require('assert');
 
-var checkService = new dokimon.Test(
-      'ServiceRunningTest', 
-      {url : '/'}, 
-      function(res, body) {
-        assert.equal(res.statusCode, 200, 'My website is not responding');
-      }
+var checkHomepage = new dokimon.Test(
+  'HomePageIsRunning', 
+  {url : '/'}, 
+  function(res, body) {
+    assert.equal(res.statusCode, 200, 'My website is not responding');
+  }
 );
       
-module.exports = checkService;
+module.exports = checkHomepage;
 ```
+
+You can also export an array with tests. 
+
+```js
+var dokimon = require('dokimon'),
+    assert = require('assert');
+
+var checkHomepage = new dokimon.Test(
+  'HomePageIsRunning'...
+);
+
+var checkSiteSearch = new dokimon.TestPostForm(
+  'SearchIsWorking', 
+  {
+    url : '/search/',
+    write : {s : 'hockey', sortby : 'date', sortorder : 'desc'}
+  },
+  function(res, body) {
+    assert.equal(res.statusCode, 200, 'Search is down');
+    // and some other assertions that validates expected search result
+  }
+);
+  
+module.exports = [checkHomepage,checkSiteSearch];
+```
+
+Assuming that I've written this code in a file residing in my test directory (defined in config.json) and that the file has <em>.dokimon</em> as extension I can now run my tests by calling `dokimon -r`
 
 ## CLI
   - <strong>-r</strong> Run all test scripts residing in your test directory or 
