@@ -56,7 +56,24 @@ will search for a file named config.json in current working directory if not spe
 ## Writing tests
 
 You can have one or several test scripts, each containing one or several tests. All test script should have
-the extension <em>.dokimon</em>. The test script is written as ordinary node modules. Basic example:
+the extension <em>.dokimon</em>. The test script is written as ordinary node modules. 
+
+<strong>Basic example, check that my website is up running</strong>
+
+```
+var dokimon = require('dokimon'),
+    assert = require('assert');
+
+var checkService = new dokimon.Test(
+      'ServiceRunningTest', 
+      {url : '/'}, 
+      function(res, body) {
+        assert.equal(res.statusCode, 200, 'My website is not responding');
+      }
+);
+      
+module.exports = checkService;
+```
 
 ## CLI
   - <strong>-r</strong> Run all test scripts residing in your test directory or 
