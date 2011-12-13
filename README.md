@@ -40,7 +40,7 @@ will search for a file named config.json in current working directory if not spe
 {
   "host" : "api.myservice.com",
   "verbose" : false,
-  "testdir" : "dokimontests"
+  "testdir" : "tests"
 }
 ```
 
@@ -60,7 +60,7 @@ the extension <em>.dokimon</em>. The test script is written as ordinary node mod
 
 <strong>Basic example, check that my website is up running</strong>
 
-```
+```js
 var dokimon = require('dokimon'),
     assert = require('assert');
 
