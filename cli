@@ -44,7 +44,10 @@ var dokimon = require('./dokimon'),
     },
     command = process.argv.length > 2 ? process.argv[2]:COMMAND.HELP;
 
-// Separate requested scripts from arguments
+
+/*
+ * Separate requested scripts from arguments
+ */
 if(process.argv.length > 3) {
     for(i=3; i < process.argv.length; i++) {
 
@@ -76,7 +79,10 @@ if(process.argv.length > 3) {
     }
 }
 
-// Load configuration and override configuration variables with command line args
+
+/*
+ * Load configuration and override configuration variables with command line args
+ */
 if(command != COMMAND.HELP && command != COMMAND.HELP_SHORT) {
     if(args[COMMAND.ARG_CONFIG] == undefined)
         args[COMMAND.ARG_CONFIG] = './config.json';
@@ -168,6 +174,7 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
     }
 }
 
+
 /*
  * LIST AVAILABLE TEST SCRIPTS
  */
@@ -181,6 +188,7 @@ else if(command == COMMAND.LIST) {
             console.log("  - "+t[j].name)
     });
 }
+
 
 /*
  * SHOW TESTS IN SCRIPT
@@ -197,6 +205,7 @@ else if(command == COMMAND.SHOW) {
             console.log("  - "+t[j].name);
     }
 }
+
 
 /*
  * SHOW HELP INFO
@@ -218,6 +227,7 @@ else if(command == COMMAND.HELP_SHORT || command == COMMAND.HELP) {
     console.log('-config \tUse another config file then the one that is automatically loaded by dokimon');
     console.log('');
 }
+
 
 /*
  * COMMAND NOT FOUND

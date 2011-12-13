@@ -266,6 +266,9 @@ var TestFormPost = function(testName, options, callback, blocking) {
 
     options.headers['Content-Length'] = Buffer.byteLength(options.write, 'utf8');
 
+    if(options.method == undefined)
+        options.method = 'POST';
+
     this.blocking = blocking;
     this.name = testName;
 };
