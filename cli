@@ -37,10 +37,12 @@ var dokimon = require('./dokimon'),
     },
     fixPath = function(path) {
         var fl = path.substr(0,1);
-        return fl == '.' || fl == '/' ? path : './'+path;
+        if(fl == '.' || fl == '/')
+            return path;
+
+        return process.cwd()+'/'+path;
     },
     command = process.argv.length > 2 ? process.argv[2]:COMMAND.HELP;
-
 
 // Separate requested scripts from arguments
 if(process.argv.length > 3) {
@@ -85,7 +87,6 @@ if(command != COMMAND.HELP && command != COMMAND.HELP_SHORT) {
         if(args[argsRequiringValue[i]] != undefined)
             config[ argsRequiringValue[i].substr(1, argsRequiringValue[i].length) ] = args[argsRequiringValue[i]];
     }
-    config.testdir = fixPath(config.testdir);
     if(args[COMMAND.ARG_VERBOSE] != undefined)
         config.verbose = true;
 
@@ -107,7 +108,7 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
         else {
             var testFileName = testManager.scriptNameToPath(process.argv[3]);
             console.log('# Will run '+testFileName+'::'+process.argv[4]);
-            var t = require(testFileName);
+            var t = require(fixPath(testFileName));
             if(t instanceof dokimon.Test)
                 t = [t];
             testManager.setTests(t);
@@ -120,7 +121,7 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
         console.log('##-> RUNNING ALL TESTS');
         testManager.loadScriptsInDir(config.testdir).forEach(function(script) {
             console.log('# Will run '+script);
-            var t = require(config.testdir +'/'+ script + dokimon.TEST_EXTENSION);
+            var t = require(fixPath(config.testdir +'/'+ script + dokimon.TEST_EXTENSION));
             if(t instanceof dokimon.Test)
                 t = [t];
             for(var j=0; j < t.length; j++)
@@ -136,7 +137,7 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
             try {
                 var testFileName = testManager.scriptNameToPath(scripts[i]);
                 console.log('# Will run '+testFileName);
-                var t = require(testFileName);
+                var t = require(fixPath(testFileName));
                 if(!(t instanceof dokimon.Test)) {
                     for(var j=0; j < t.length; j++)
                         collectedTests.push( t[j] );
@@ -173,7 +174,7 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
 else if(command == COMMAND.LIST) {
     testManager.loadScriptsInDir(config.testdir).forEach(function(script) {
         console.log(script);
-        var t = require(config.testdir+'/'+script+dokimon.TEST_EXTENSION);
+        var t = require(fixPath(config.testdir+'/'+script+dokimon.TEST_EXTENSION));
         if(t instanceof dokimon.Test)
             t = [t];
         for(var j=0; j < t.length; j++)
@@ -189,7 +190,7 @@ else if(command == COMMAND.SHOW) {
         console.log('To few arguments, dokimon '+COMMAND.SHOW+' myscript');
     }
     else {
-        var t = require(testManager.scriptNameToPath(process.argv[3]));
+        var t = require(fixPath(testManager.scriptNameToPath(process.argv[3])));
         if(t instanceof dokimon.Test)
             t = [t];
         for(var j=0; j < t.length; j++)

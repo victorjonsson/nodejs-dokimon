@@ -26,7 +26,8 @@ This file should contain a JSON object with the properties "host", "verbose" and
 
   - <strong>host</strong> (String) —  Specifies against which host you're going to run the tests. 
   - <strong>verbose</strong> (Boolean) — Makes it possible to get a more verbose output when running the tests
-  - <strong>testdir</strong> (String) — Path to the directory where you have your test scripts
+  - <strong>testdir</strong> (String) — Relative path to the directory where you have your test scripts.
+  This directory should be placed in the project directory.
 
 It's possible to change all of these paremeters on the fly when using the command line interface. It's also
 possible to completely switch to another configuration file when using the command line interface. Dokimon 
@@ -38,9 +39,8 @@ will search for a file named config.json in current working directory if not spe
 {
   "host" : "api.myservice.com",
   "verbose" : false,
-  "testdir" : "/Users/john/projects/dokimontests"
+  "testdir" : "dokimontests"
 }
-
 ```
 
 ## Writing tests
