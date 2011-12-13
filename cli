@@ -4,7 +4,6 @@ var dokimon = require('./dokimon'),
     i = 0,
     args = {},
     scripts = [],
-    config = {},
     COMMAND = {
         RUN : '-r',
         RUN_SPECIFIED : '-rs',
@@ -43,6 +42,14 @@ var dokimon = require('./dokimon'),
         return process.cwd()+'/'+path;
     },
     command = process.argv.length > 2 ? process.argv[2]:COMMAND.HELP;
+
+
+/**
+ * Let's pollute the global namespace with our configuration
+ * @global
+ * @var {Object} dokimonConfig
+ */
+dokimonConfig = {};
 
 
 /*
@@ -88,15 +95,15 @@ if(command != COMMAND.HELP && command != COMMAND.HELP_SHORT) {
         args[COMMAND.ARG_CONFIG] = './config.json';
     args[COMMAND.ARG_CONFIG] = fixPath(args[COMMAND.ARG_CONFIG]);
 
-    config = JSON.parse(fs.readFileSync(args['-config']));
+    dokimonConfig = JSON.parse(fs.readFileSync(args[COMMAND.ARG_CONFIG]));
     for(i = 0; i < argsRequiringValue.length; i++) {
         if(args[argsRequiringValue[i]] != undefined)
-            config[ argsRequiringValue[i].substr(1, argsRequiringValue[i].length) ] = args[argsRequiringValue[i]];
+            dokimonConfig[ argsRequiringValue[i].substr(1, argsRequiringValue[i].length) ] = args[argsRequiringValue[i]];
     }
     if(args[COMMAND.ARG_VERBOSE] != undefined)
-        config.verbose = true;
+        dokimonConfig.verbose = true;
 
-    var testManager = new dokimon.TestManager(config);
+    var testManager = new dokimon.TestManager(dokimonConfig);
 }
 
 
@@ -125,9 +132,9 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
     // Run all scripts
     else if(scripts.length == 0) {
         console.log('##-> RUNNING ALL TESTS');
-        testManager.loadScriptsInDir(config.testdir).forEach(function(script) {
+        testManager.loadScriptsInDir(dokimonConfig.testdir).forEach(function(script) {
             console.log('# Will run '+script);
-            var t = require(fixPath(config.testdir +'/'+ script + dokimon.TEST_EXTENSION));
+            var t = require(fixPath(dokimonConfig.testdir +'/'+ script + dokimon.TEST_EXTENSION));
             if(t instanceof dokimon.Test)
                 t = [t];
             for(var j=0; j < t.length; j++)
@@ -179,9 +186,9 @@ if(command == COMMAND.RUN || command == COMMAND.RUN_SPECIFIED) {
  * LIST AVAILABLE TEST SCRIPTS
  */
 else if(command == COMMAND.LIST) {
-    testManager.loadScriptsInDir(config.testdir).forEach(function(script) {
+    testManager.loadScriptsInDir(dokimonConfig.testdir).forEach(function(script) {
         console.log(script);
-        var t = require(fixPath(config.testdir+'/'+script+dokimon.TEST_EXTENSION));
+        var t = require(fixPath(dokimonConfig.testdir+'/'+script+dokimon.TEST_EXTENSION));
         if(t instanceof dokimon.Test)
             t = [t];
         for(var j=0; j < t.length; j++)
@@ -217,14 +224,14 @@ else if(command == COMMAND.HELP_SHORT || command == COMMAND.HELP) {
     console.log('Commands:');
     console.log('-r\tRun all scripts or one specified script (e.g. "dokimon -r" or "dokimon -r myscript")');
     console.log('-rs\tRun a specific test (e.g. "dokimon -rs myscript sometest")');
-    console.log('-l\tList all available test scripts and containing tests');
-    console.log('-s\tList all tests in specified script (e.g. "dokimon -s myscript")');
+    console.log('-l\tList all available dokimon scripts and their containing tests');
+    console.log('-s\tList all tests in the specified dokimon script (e.g. "dokimon -s myscript")');
     console.log('');
     console.log('Optional arguments:');
     console.log('-verbose\tGet a more verbose output when running tests');
-    console.log('-host   \tOverride the host defined in config.json (e.g. "dokimon -r -host test.mysite.com")');
-    console.log('-testdir\tUse another test directory than the one defined in config.json (e.g. "dokimon -r -testdir ./test/production/")');
-    console.log('-config \tUse another config file then the one that is automatically loaded by dokimon');
+    console.log('-host   \tOverride the host defined in config.json (e.g. "dokimon -r -host dev.mysite.com")');
+    console.log('-testdir\tUse another test directory than the one defined in config.json (e.g. "dokimon -r -testdir tests/production/")');
+    console.log('-config \tUse another config file than the one that is automatically loaded by dokimon (e.g. "dokimon -r -config stageserver.conf.json")');
     console.log('');
 }
 

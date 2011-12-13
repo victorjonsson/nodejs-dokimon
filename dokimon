@@ -2,9 +2,9 @@ var filesystem = require('fs'),
     util = require('util'),
     querystring = require('querystring');
 
+
 /**
  * @param {Object} options
- * @return {Object}
  */
 function mergeWithDefaultOptions(options) {
     if(options.url == undefined)
@@ -17,8 +17,13 @@ function mergeWithDefaultOptions(options) {
         options.write = '';
     if(options.method == undefined)
         options.method = 'GET';
+
+    if(typeof options.write != 'string')
+        options.write = querystring.stringify(options.write);
+
     if(options.headers['Content-Length'] == undefined && typeof options.write == 'string')
         options.headers['Content-Length'] = Buffer.byteLength(options.write, 'utf8');
+
     if(typeof options.url == 'object')
         options.path = querystring.stringify(options.url);
     else
@@ -26,6 +31,9 @@ function mergeWithDefaultOptions(options) {
 
     if(options.headers['User-Agent'] == undefined)
         options['User-Agent'] = 'node dokimon scraper';
+
+    if(options.timeout == undefined)
+        options.timeout = 8000;
 }
 
 
@@ -72,7 +80,7 @@ var TestManager = function(config, testFinishCallback) {
             // blocking request
             if(this.tests[i].blocking) {
                 if(config.verbose)
-                    this.log('Blocking upcoming tests on index '+i);
+                    this.log('Blocking upcoming tests on index '+i+' for '+this.tests[i].name);
 
                 this.index = i+1;
                 var self = this;
@@ -95,7 +103,7 @@ var TestManager = function(config, testFinishCallback) {
     this.runTest = function(testName, verbose) {
         for(var i=0; i < this.tests.length; i++) {
             if(this.tests[i].name == testName) {
-                this.tests[i].execute(config.host, this, verbose);
+                this.tests[i].execute(config.host, this, config.verbose);
                 return;
             }
         }
@@ -121,6 +129,7 @@ var TestManager = function(config, testFinishCallback) {
         this.log('- '+fail.name + " FAILED! \n"+fail.message);
         if(err)
             this.log(err);
+        this.log('');
         _checkIfFinished(this);
     };
 
@@ -167,8 +176,10 @@ var TestManager = function(config, testFinishCallback) {
             }
             else {
                 manager.log("\n------------------------------\nAll is not well :(");
-                manager.log(manager.fails.length+' test'+(manager.fails.length > 1 ? 's':'')+' failed');
                 manager.log(manager.successes.length+' test'+(manager.successes.length > 1 ? 's':'')+' was successfull');
+                manager.log(manager.fails.length+' test'+(manager.fails.length > 1 ? 's':'')+' failed');
+                for(var i=0; i < manager.fails.length; i++)
+                    manager.log("  - "+manager.fails[i].name+" ("+manager.fails[i].message+")");
             }
 
             manager.log("");
@@ -220,6 +231,8 @@ var Test = function(testName, options, callback, blocking) {
         if(verbose)
             manager.log("About to request "+host+" for \n"+JSON.stringify(options).replace(/\,\"/g, ",\n\"")+"\n");
 
+        var self = this;
+
         var req = require('http').request(options, function(res) {
             var collectedBody = '';
             res.setEncoding('utf8');
@@ -227,22 +240,44 @@ var Test = function(testName, options, callback, blocking) {
                 collectedBody += body;
             });
             res.on('end', function() {
-                try {
-                    callback(res, collectedBody, verbose);
-                    manager.registerSuccessfullTest({name : testName, message:''});
-                    if(typeof exeFinishCallback == 'function')
-                        exeFinishCallback();
+                if(res.headers.Location != undefined) {
+
+                    if(res.headers['Set-Cookie'] != undefined)
+                        options.headers['Get-Cookie'] = res.headers['Set-Cookie'];
+
+                    options.method = 'GET';
+                    options.headers['Content-Length'] = Buffer.byteLength('', 'utf8');
+                    options.write = '';
+                    options.path = res.headers.Location;
+
+                    self.execute(options.host, options, verbose, exeFinishCallback);
                 }
-                catch(e) {
-                    manager.registerFailedtest({name : testName, message:e.message}, e);
-                    if(typeof exeFinishCallback == 'function')
-                        exeFinishCallback();
+                else {
+                    try {
+                        callback(res, collectedBody, verbose);
+
+                        manager.registerSuccessfullTest({name : testName, message:''});
+                        if(typeof exeFinishCallback == 'function')
+                            exeFinishCallback();
+                    }
+                    catch(e) {
+                        manager.registerFailedtest({name : testName, message:e.message}, e);
+                        if(typeof exeFinishCallback == 'function')
+                            exeFinishCallback();
+                    }
                 }
             });
         });
 
         req.on('error', function(e) {
             manager.registerFailedtest({name : testName, message:''}, e);
+        });
+
+        req.connection.setTimeout(options.timeout, function() {
+            manager.registerFailedtest({name: testName, message : 'Timeout after '+options.timeout+' ms'}, '');
+            req.abort();
+            if(typeof exeFinishCallback == 'function')
+                exeFinishCallback();
         });
 
         req.write(options.write);
@@ -259,18 +294,16 @@ var Test = function(testName, options, callback, blocking) {
  * @param {Boolean} blocking - Optional, whether or not this test is supposed to finish before running any other tests
  * * * * * * * * * * * * * * * * * * * * * * * * */
 var TestFormPost = function(testName, options, callback, blocking) {
-    mergeWithDefaultOptions(options);
+
+    TestFormPost.super_.call(this, testName, options, callback, blocking);
+
     options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
     if(typeof(options.write) == 'object')
         options.write = querystring.stringify(options.write);
 
     options.headers['Content-Length'] = Buffer.byteLength(options.write, 'utf8');
 
-    if(options.method == undefined)
-        options.method = 'POST';
-
-    this.blocking = blocking;
-    this.name = testName;
+    options.method = 'POST';
 };
 util.inherits(TestFormPost, Test);
 
