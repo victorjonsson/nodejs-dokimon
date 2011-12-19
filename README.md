@@ -102,10 +102,20 @@ module.exports = [checkHomepage,checkSiteSearch];
 
 Assuming that I've written this code in a file residing in my test directory (defined in config.json) and that the file has <em>.dokimon</em> as extension I can now run my tests by calling `dokimon -r` in the project directory. I can also choose to only run one the tests like `dokimon -rs myscript HomePageIsRunning`
 
-Dokimon provides several different types of tests, read more at http://something.com
+[Read more about writing tests here](https://github.com/victorjonsson/dokimon/wiki/Writing-tests)
 
 ## CLI
-  - <strong>-r</strong> Run all test scripts residing in your test directory or 
+```
+dokimon -r
+```
+Run all dokimon scripts in the test directory defined in config.json
+
+```
+dokimon -r api website
+```
+Run the scripts named api.dokimon and website.dokimon residing in the test directory defined in config.json. You can 
+also write the paths to the scripts, -r tests/api.dokimon tests/website.dokimon
+
   - <strong>-rs</strong> Run
   - <strong>-l</strong> Lorem
   - <strong>-s</strong> Lorem
