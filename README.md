@@ -116,6 +116,18 @@ dokimon -r api website
 Run the scripts named api.dokimon and website.dokimon residing in the test directory defined in config.json. You can 
 also write the paths to the scripts, -r tests/api.dokimon tests/website.dokimon
 
-  - <strong>-rs</strong> Run
-  - <strong>-l</strong> Lorem
-  - <strong>-s</strong> Lorem
+```
+dokimon -rs website HomePageIsRunning
+```
+Run the test named <em>HomePageIsRunning</em> that's located in the script website.dokimon residing in the test
+directory defined in config.json
+
+```
+dokimon -l
+```
+List all scripts (and their tests) that is located in the test directory, defined in config.json
+
+```
+dokimon -s website
+```
+List all available tests in the script website.dokimon
