@@ -17,6 +17,10 @@ function mergeWithDefaultOptions(options) {
         options.write = '';
     if(options.method == undefined)
         options.method = 'GET';
+    if(options.encoding == undefined)
+        options.encoding = 'utf8';
+    if(options.keepCookies == undefined)
+        options.keepCookies = false;
 
     if(typeof options.write != 'string')
         options.write = querystring.stringify(options.write);
@@ -228,34 +232,50 @@ var Test = function(testName, options, callback, blocking) {
 
         options.host = host;
 
+        if(options.keepCookies && Test.lastCookies)
+            options.headers['Cookie'] = Test.lastCookies;
+
         if(verbose)
-            manager.log("About to request "+host+" for \n"+JSON.stringify(options).replace(/\,\"/g, ",\n\"")+"\n");
+            manager.log("About to request "+host+" for "+testName+" with \n"+_formatJSON(options)+"\n");
 
         var self = this;
 
         var req = require('http').request(options, function(res) {
             var collectedBody = '';
-            res.setEncoding('utf8');
+            res.setEncoding(options.encoding);
             res.on('data', function (body) {
                 collectedBody += body;
             });
             res.on('end', function() {
-                if(res.headers.Location != undefined) {
 
-                    if(res.headers['Set-Cookie'] != undefined)
-                        options.headers['Get-Cookie'] = res.headers['Set-Cookie'];
+                if(verbose)
+                    manager.log(testName+" recieved response from "+options.host+options.path+" "+_formatJSON(res.headers)+"\n");
+
+                if(res.headers['set-cookie'] != undefined)
+                    Test.lastCookies = _setToGetCookies(res.headers['set-cookie']);
+
+                var loc = res.headers.location == undefined ? res.headers.Location : res.headers.location;
+                if(loc != undefined) {
+
+                    if(verbose)
+                        manager.log('Redirecting '+testName+' to '+loc);
 
                     options.method = 'GET';
-                    options.headers['Content-Length'] = Buffer.byteLength('', 'utf8');
+                    options.headers['Content-Length'] = 0;
                     options.write = '';
-                    options.path = res.headers.Location;
+                    options.path = loc;
+                    if(options.path.indexOf(options.host) > -1) {
+                        options.path = options.path.split(options.host)[1];
+                    }
 
-                    self.execute(options.host, options, verbose, exeFinishCallback);
+                    self.execute(options.host, manager, verbose, exeFinishCallback);
                 }
                 else {
-                    try {
-                        callback(res, collectedBody, verbose);
 
+                    res.url = options.path;
+
+                    try {
+                        self.runCallback(res, collectedBody, verbose);
                         manager.registerSuccessfullTest({name : testName, message:''});
                         if(typeof exeFinishCallback == 'function')
                             exeFinishCallback();
@@ -283,8 +303,54 @@ var Test = function(testName, options, callback, blocking) {
         req.write(options.write);
         req.end();
     };
+
+    /**
+     * Runs the test callback when request is finished
+     * @param {Object} res
+     * @param {String} collectedBody
+     * @param {Boolean} verbose
+     */
+    this.runCallback = function(res, collectedBody, verbose) {
+        callback(res, collectedBody, verbose);
+    };
+
+    /**
+     * @access private
+     * @param {Array} responseCookies
+     * @return {String}
+     */
+    var _setToGetCookies = function(responseCookies) {
+        var cookies = '';
+        for(var i=0; i < responseCookies.length; i++) {
+            cookies += ', '+responseCookies[i].split(';')[0];
+        }
+
+        return cookies.length == 0 ? '': cookies.substr(2, cookies.length);
+    };
+
+    /**
+     * @access private
+     * @param {Object} json
+     * @return {String}
+     */
+    var _formatJSON = function(json) {
+        var str = JSON.stringify(json);
+        if(str == '[object Object]') {
+            str = '';
+            for(var x in json) {
+                var type = typeof(json[x]);
+                str += type +" : "+( type == 'string' || type == 'number' ? json[x]:json[x].toString())+"\n";
+            }
+        }
+
+        return str.replace(/\,\"/g, ",\n\"");
+    };
 };
 
+/**
+ * @
+ */
+Test.lastCookies = false;
 
 /** * * * * * * * * * * * * * * * * * * * * * * * *
  * @class {TestFormPost}
