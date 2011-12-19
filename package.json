@@ -2,8 +2,8 @@
   "author": "Victor Jonsson <kontakt@victorjonsson.se> (http://victorjonsson.se)",
   "name": "dokimon",
   "description": "A simple framework that is used for test automation. Write tests for a website or web service and manage them with a command line interface",
-  "version": "0.0.15",
-  "homepage": "https://github.com/victorjonsson/dokimon",
+  "version": "0.0.16",
+  "homepage": "https://github.com/victorjonsson/nodejs-dokimon",
   "keywords": ["test","tests","scraping","node.js", "automation", "testing"],
   "licenses": [{
     "type": "MIT",
@@ -11,7 +11,7 @@
   }],
   "repository": {
     "type": "git",
-    "url": "git@github.com:victorjonsson/dokimon.git"
+    "url": "git@github.com:victorjonsson/nodejs-dokimon.git"
   },
   "main": "./dokimon",
   "bin" : "./cli",
