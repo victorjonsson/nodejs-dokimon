@@ -131,3 +131,14 @@ List all scripts (and their tests) that is located in the test directory, define
 dokimon -s website
 ```
 List all available tests in the script website.dokimon
+
+### Optional arguments
+
+`-verbose` - Gives you a more verbose output when running the tests
+
+`-config /Users/john/dokimon/production.json` - Use another config file than the one that is automatically loaded by dokimon
+
+`-host stage.myservice.com` - Override the host defined in config.json
+
+`-testdir /var/nodetests/` - Use another test directory than the one defined in config.json
+
