@@ -12,3 +12,7 @@ extending class to override the execute() function
     - Added some verbose output
     - Possible to use cookies over several requests (keeping a server session)
     - TestPostForm now works as supposed
+
+## v 0.0.17
+    - Added comments
+    - Fixed bug, callback function did not run on request error

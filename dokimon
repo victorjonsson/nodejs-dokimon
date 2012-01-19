@@ -229,6 +229,8 @@ var Test = function(testName, options, callback, blocking) {
      * @param {Function} exeFinishCallback - Optional, will be called when request is finished and test callback is called
      */
     this.execute = function(host, manager, verbose, exeFinishCallback) {
+        if(typeof exeFinishCallback != 'function')
+            exeFinishCallback = function() {};
 
         options.host = host;
 
@@ -277,13 +279,11 @@ var Test = function(testName, options, callback, blocking) {
                     try {
                         self.runCallback(res, collectedBody, verbose);
                         manager.registerSuccessfullTest({name : testName, message:''});
-                        if(typeof exeFinishCallback == 'function')
-                            exeFinishCallback();
+                        exeFinishCallback();
                     }
                     catch(e) {
                         manager.registerFailedtest({name : testName, message:e.message}, e);
-                        if(typeof exeFinishCallback == 'function')
-                            exeFinishCallback();
+                        exeFinishCallback();
                     }
                 }
             });
@@ -291,14 +291,16 @@ var Test = function(testName, options, callback, blocking) {
 
         req.on('error', function(e) {
             manager.registerFailedtest({name : testName, message:''}, e);
+            exeFinishCallback();
         });
 
-        req.connection.setTimeout(options.timeout, function() {
-            manager.registerFailedtest({name: testName, message : 'Timeout after '+options.timeout+' ms'}, '');
-            req.abort();
-            if(typeof exeFinishCallback == 'function')
+        if(req.connection != undefined) {
+            req.connection.setTimeout(options.timeout, function() {
+                manager.registerFailedtest({name: testName, message : 'Timeout after '+options.timeout+' ms'}, '');
+                req.abort();
                 exeFinishCallback();
-        });
+            });
+        }
 
         req.write(options.write);
         req.end();
@@ -348,9 +350,10 @@ var Test = function(testName, options, callback, blocking) {
 };
 
 /**
- * @
+ * @var {Boolean|String}
  */
 Test.lastCookies = false;
+
 
 /** * * * * * * * * * * * * * * * * * * * * * * * *
  * @class {TestFormPost}
@@ -394,6 +397,8 @@ module.exports = {
 
     /**
      * @param {Test} t
+     * @param {Object} config
+     * @param {Function} testFinishCallback - Optional
      */
     runTest : function(t, config, testFinishCallback) {
         var manager = new TestManager(config, testFinishCallback);

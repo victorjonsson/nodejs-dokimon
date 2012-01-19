@@ -218,7 +218,7 @@ else if(command == COMMAND.SHOW) {
  * SHOW HELP INFO
  */
 else if(command == COMMAND.HELP_SHORT || command == COMMAND.HELP) {
-    console.log('More help available at https://github.com/victorjonsson/dokimon/');
+    console.log('More help available at https://github.com/victorjonsson/nodejs-dokimon/');
     console.log("Usage:\ndokimon [command] [script | scripts] [arguments]");
     console.log('');
     console.log('Commands:');
