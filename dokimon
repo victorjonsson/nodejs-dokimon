@@ -254,7 +254,7 @@ var Test = function(testName, options, callback, blocking) {
                     manager.log(testName+" recieved response from "+options.host+options.path+" "+_formatJSON(res.headers)+"\n");
 
                 if(res.headers['set-cookie'] != undefined)
-                    Test.lastCookies = _setToGetCookies(res.headers['set-cookie']);
+                    Test.lastCookies = _setToGetCookies(res.headers['set-cookie'], Test.lastCookies ? Test.lastCookies:'');
 
                 var loc = res.headers.location == undefined ? res.headers.Location : res.headers.location;
                 if(loc != undefined) {
@@ -268,6 +268,7 @@ var Test = function(testName, options, callback, blocking) {
                     options.path = loc;
                     if(options.path.indexOf(options.host) > -1) {
                         options.path = options.path.split(options.host)[1];
+                        options.url = options.path;
                     }
 
                     self.execute(options.host, manager, verbose, exeFinishCallback);
@@ -319,13 +320,50 @@ var Test = function(testName, options, callback, blocking) {
     /**
      * @access private
      * @param {Array} responseCookies
+     * @param {String} currentCookies
      * @return {String}
      */
-    var _setToGetCookies = function(responseCookies) {
-        var cookies = '';
-        for(var i=0; i < responseCookies.length; i++) {
-            cookies += ', '+responseCookies[i].split(';')[0];
+    var _setToGetCookies = function(responseCookies, currentCookies) {
+        var currentCookiesObj = {};
+        var currentCookieParts = currentCookies.split(';');
+        var cookies = '', i;
+
+        // Build up an object with all current cookies
+        for(i=0; i < currentCookieParts.length; i++) {
+            var p = currentCookieParts[i].split('=');
+            if(p.length > 1)
+                currentCookiesObj[p[0].trim()] = p[1].trim();
         }
+
+
+        // Go through repsonse cookies and determine which
+        // has expired or new cookies
+        var now = new Date().getTime();
+        for(i=0; i < responseCookies.length; i++) {
+            var cookieParts = responseCookies[i].split(';');
+            var cookieName = cookieParts[0].split('=')[0];
+            if(typeof currentCookiesObj[cookieName] != 'undefined') {
+                // maybe expired
+                for(var j=0; j < cookieParts.length; j++) {
+                    var cookieArgs = cookieParts[j].split('=');
+                    if(cookieArgs[0] == 'expires') {
+                        var d = new Date(cookieArgs[0]);
+                        if(d.getTime() < now) {
+                            currentCookiesObj[cookieName] = false;
+                        }
+                    }
+                }
+            }
+
+            cookies += '; '+cookieParts[0];
+        }
+
+        // Append previous cookies (which is not deleted by expire argument)
+        Object.keys(currentCookiesObj).forEach(function(k) {
+            var val = currentCookiesObj[k];
+            if(val)
+                cookies += '; '+k+'='+val;
+        });
 
         return cookies.length == 0 ? '': cookies.substr(2, cookies.length);
     };
