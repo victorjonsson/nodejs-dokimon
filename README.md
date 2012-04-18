@@ -23,7 +23,7 @@ Create a directory where you find suitable, go to the directory in your shell in
 You write your tests in files that has the extension .djs (more information about writing the tests below).
 
 ### 3) config.json
-This file should be placed in the root of your project directory and contain a JSON object with 
+This file should be placed in the root of your project directory and contain a JSON file with
 the properties "host", "verbose" and "testdir". 
 
   - <strong>host</strong> (String) —  Specifies against which host you're going to run the tests. 
@@ -56,8 +56,9 @@ will search for a file named config.json in current working directory if not spe
 
 ## Writing tests
 
-You can have one or several dokimon scripts, each containing one or several tests. All dokimon scripts should have
-the extension <em>.djs</em> and be located in the test directory defined in config.json. The scripts is written as ordinary node modules (http://howtonode.org/creating-custom-modules). 
+You can have one or several script files in your test directory, each containing one or several tests. All
+script files in the test directory should have the extension <em>.djs</em>. The script files is ordinary
+node modules (http://howtonode.org/creating-custom-modules).
 
 <strong>Basic example (myscript.djs)</strong>
 
@@ -101,9 +102,16 @@ var checkSiteSearch = new dokimon.TestPostForm(
 module.exports = [checkHomepage,checkSiteSearch];
 ```
 
-Assuming that I've written this code in a file residing in my test directory (defined in config.json) and that the file has <em>.djs</em> as extension I can now run my tests by calling `dokimon -r` in the project directory. I can also choose to only run one the tests like `dokimon -rs myscript HomePageIsRunning`
+Assuming that I've written this code in a file residing in my test directory (defined in config.json) and
+that the file has <em>.djs</em> as extension I can now run my tests by calling `dokimon -r` in the project
+directory. I can also choose to only run one of the tests by calling `dokimon -rs myscript HomePageIsRunning`
 
 [Read more about writing tests here](https://github.com/victorjonsson/nodejs-dokimon/wiki/Writing-tests)
+
+[Example, tests for a RESTful API](https://github.com/victorjonsson/nodejs-dokimon/wiki/Example:-RESTful-API-(of-some-kind))
+
+[Example, tests for wordpress](https://github.com/victorjonsson/nodejs-dokimon/wiki/Example:-Wordpress)
+
 
 ## CLI
 ```
