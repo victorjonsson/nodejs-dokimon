@@ -1,7 +1,7 @@
 {
   "author": "Victor Jonsson <kontakt@victorjonsson.se> (http://victorjonsson.se)",
   "name": "dokimon",
-  "description": "A simple framework that is used for test automation. Write tests for a website or web service and manage them with a command line interface",
+  "description": "This is a module used for setting up automated tests of various kinds. It may also be used as an alternative (or complement) to browser test tools such as Selenium. Write tests for a website or web service and manage them with a command line interface. Documentation available on github",
   "version": "0.0.17",
   "homepage": "https://github.com/victorjonsson/nodejs-dokimon",
   "keywords": ["test","tests","scraping","node.js", "automation", "testing"],

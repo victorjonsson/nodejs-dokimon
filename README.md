@@ -1,13 +1,14 @@
 # Dokimon
 
-This project is supposed to end up in a nodejs module used for writing and running automated tests of various kinds. 
-It's fast and easy to write the tests and you run them using a command line interface.
+This is a node module used for setting up automated tests of various kinds. It may also
+be used as an alternative (or complement) to client test tools such as Selenium. You write your
+tests in a heartbeat and run them using a command line interface.
 
 <strong>Example usages:</strong>
 
   - Verify that your online services is up and running
   - Verfify that your RESTfull API is responding and behaving as expected
-  - Validate that your website is spitting out expected html code 
+  - Validate that your website generates expected html code
 
 ## Getting started
 
@@ -19,7 +20,7 @@ Create a directory where you find suitable, go to the directory in your shell in
 ``npm install dokimon``
 
 ### 4) Create test directory
-You write your tests in files that has the extension .dokimon...
+You write your tests in files that has the extension .djs (more information about writing the tests below).
 
 ### 3) config.json
 This file should be placed in the root of your project directory and contain a JSON object with 
@@ -49,16 +50,16 @@ will search for a file named config.json in current working directory if not spe
 ```
 /Users/john/nodetests/
     tests/
-      - myscript.dokimon
+      - myscript.djs
     - config.json
 ```
 
 ## Writing tests
 
 You can have one or several dokimon scripts, each containing one or several tests. All dokimon scripts should have
-the extension <em>.dokimon</em> and be located in the test directory defined in config.json. The scripts is written as ordinary node modules (http://howtonode.org/creating-custom-modules). 
+the extension <em>.djs</em> and be located in the test directory defined in config.json. The scripts is written as ordinary node modules (http://howtonode.org/creating-custom-modules). 
 
-<strong>Basic example (myscript.dokimon)</strong>
+<strong>Basic example (myscript.djs)</strong>
 
 ```js
 var dokimon = require('dokimon'),
@@ -100,7 +101,7 @@ var checkSiteSearch = new dokimon.TestPostForm(
 module.exports = [checkHomepage,checkSiteSearch];
 ```
 
-Assuming that I've written this code in a file residing in my test directory (defined in config.json) and that the file has <em>.dokimon</em> as extension I can now run my tests by calling `dokimon -r` in the project directory. I can also choose to only run one the tests like `dokimon -rs myscript HomePageIsRunning`
+Assuming that I've written this code in a file residing in my test directory (defined in config.json) and that the file has <em>.djs</em> as extension I can now run my tests by calling `dokimon -r` in the project directory. I can also choose to only run one the tests like `dokimon -rs myscript HomePageIsRunning`
 
 [Read more about writing tests here](https://github.com/victorjonsson/nodejs-dokimon/wiki/Writing-tests)
 
@@ -113,13 +114,13 @@ Run all dokimon scripts in the test directory defined in config.json
 ```
 dokimon -r api website
 ```
-Run the scripts named api.dokimon and website.dokimon residing in the test directory defined in config.json. You can 
-also write the paths to the scripts, -r tests/api.dokimon tests/website.dokimon
+Run the scripts named api.djs and website.djs residing in the test directory defined in config.json. You can 
+also write the paths to the scripts, -r tests/api.djs tests/website.djs
 
 ```
 dokimon -rs website HomePageIsRunning
 ```
-Run the test named <em>HomePageIsRunning</em> that's located in the script website.dokimon residing in the test
+Run the test named <em>HomePageIsRunning</em> that's located in the script website.djs residing in the test
 directory defined in config.json
 
 ```
@@ -130,7 +131,7 @@ List all scripts (and their tests) that is located in the test directory, define
 ```
 dokimon -s website
 ```
-List all available tests in the script website.dokimon
+List all available tests in the script website.djs
 
 ### Optional arguments
 

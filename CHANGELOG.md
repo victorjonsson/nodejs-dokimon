@@ -1,10 +1,10 @@
 # Package Changelog
 
 ## v. 0.0.14
-First beta release
+    - First beta release
 
 ## v. 0.0.15
-Moved callback into a class function to make it possible for extending class to override the execute() function
+    - Moved callback into a class function to make it possible for extending class to override the execute() function
 
 ## v 0.0.16
     - Added comments
@@ -17,4 +17,7 @@ Moved callback into a class function to make it possible for extending class to 
     - Now following redirects
     - Fixed bug, callback function did not run on request error
     - Fixed bug, not possible to use the same cookies for several tests
+
+## v 0.0.18
     - Extension of test files changed from .dokimon to .djs
+    - minor bug fixes
