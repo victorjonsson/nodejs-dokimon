@@ -206,7 +206,7 @@ var TestManager = function(config, testFinishCallback) {
 /**
  * Extension for scripts containing tests
  */
-TestManager.TEST_EXTENSION = '.dts';
+TestManager.TEST_EXTENSION = '.djs';
 
 
 /** * * * * * * * * * * * * * * * * * * * * * * * *

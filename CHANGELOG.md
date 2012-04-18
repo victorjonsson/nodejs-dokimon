@@ -17,4 +17,4 @@ Moved callback into a class function to make it possible for extending class to 
     - Now following redirects
     - Fixed bug, callback function did not run on request error
     - Fixed bug, not possible to use the same cookies for several tests
-    - Extension of test files changed from .dokimon to .dts (dokimon-test-script)
+    - Extension of test files changed from .dokimon to .djs
