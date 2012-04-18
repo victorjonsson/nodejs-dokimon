@@ -206,7 +206,7 @@ var TestManager = function(config, testFinishCallback) {
 /**
  * Extension for scripts containing tests
  */
-TestManager.TEST_EXTENSION = '.dokimon';
+TestManager.TEST_EXTENSION = '.dts';
 
 
 /** * * * * * * * * * * * * * * * * * * * * * * * *
