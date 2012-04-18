@@ -108,7 +108,7 @@ directory. I can also choose to only run one of the tests by calling `dokimon -r
 
 [Read more about writing tests here](https://github.com/victorjonsson/nodejs-dokimon/wiki/Writing-tests)
 
-[Example, tests for a RESTful API](https://github.com/victorjonsson/nodejs-dokimon/wiki/Example:-RESTful-API-(of-some-kind))
+[Example, tests for a RESTful API](https://github.com/victorjonsson/nodejs-dokimon/wiki/Example:-RESTful-API)
 
 [Example, tests for wordpress](https://github.com/victorjonsson/nodejs-dokimon/wiki/Example:-Wordpress)
 
