@@ -102,7 +102,7 @@ var checkSiteSearch = new dokimon.TestPostForm(
 module.exports = [checkHomepage,checkSiteSearch];
 ```
 
-Assuming that I've written this code in a file residing in my test directory (defined in config.json) and
+Assuming that I've written this code in a file located in my test directory (defined in config.json) and
 that the file has <em>.djs</em> as extension I can now run my tests by calling `dokimon -r` in the project
 directory. I can also choose to only run one of the tests by calling `dokimon -rs myscript HomePageIsRunning`
 
@@ -122,13 +122,13 @@ Run all dokimon scripts in the test directory defined in config.json
 ```
 dokimon -r api website
 ```
-Run the scripts named api.djs and website.djs residing in the test directory defined in config.json. You can 
+Run the scripts named api.djs and website.djs located in the test directory defined in config.json. You can 
 also write the paths to the scripts, -r tests/api.djs tests/website.djs
 
 ```
 dokimon -rs website HomePageIsRunning
 ```
-Run the test named <em>HomePageIsRunning</em> that's located in the script website.djs residing in the test
+Run the test named <em>HomePageIsRunning</em> that's located in the script website.djs located in the test
 directory defined in config.json
 
 ```
