@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/victorjonsson/nodejs-dokimon.png)](http://travis-ci.org/victorjonsson/nodejs-dokimon)
 # Dokimon
 
 This is a node module used for setting up automated tests of various kinds. It may also
