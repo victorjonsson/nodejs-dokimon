@@ -1,6 +1,11 @@
 var filesystem = require('fs'),
     util = require('util'),
-    querystring = require('querystring');
+    querystring = require('querystring'),
+    colors = {
+        red : '\033[31m',
+        green : '\033[32m',
+        reset : '\033[0m'
+    };
 
 
 /**
@@ -58,12 +63,17 @@ var TestManager = function(config, testFinishCallback) {
      * message with something other then console.log
      *
      * @param {String} message
+     * @param {Boolean} [error]
      */
-    this.log = function(message) {
+    this.log = function(message, error) {
         if(config.log)
-            config.log(message);
-        else
-            console.log(message);
+            config.log(message, error);
+        else {
+            if(error)
+                console.error(message);
+            else
+                console.log(message)
+        }
     };
 
     /**
@@ -130,7 +140,7 @@ var TestManager = function(config, testFinishCallback) {
      */
     this.registerFailedtest = function(fail, err) {
         this.fails.push(fail);
-        this.log('- '+fail.name + " FAILED! \n"+fail.message);
+        this.log('- '+fail.name + " FAILED! \n"+fail.message, true);
         if(err)
             this.log(err);
         this.log('');
@@ -175,15 +185,15 @@ var TestManager = function(config, testFinishCallback) {
     var _checkIfFinished = function(manager) {
         if(manager.tests.length == (manager.successes.length + manager.fails.length)) {
             if(manager.fails.length == 0) {
-                manager.log("\n------------------------------\nEverything is fine :)");
+                manager.log("\n------------------------------\n"+colors.green+"Everything is fine :)"+colors.reset);
                 manager.log('Executed a total of '+manager.successes.length+' successfull tests');
             }
             else {
-                manager.log("\n------------------------------\nAll is not well :(");
-                manager.log(manager.successes.length+' test'+(manager.successes.length > 1 ? 's':'')+' was successfull');
-                manager.log(manager.fails.length+' test'+(manager.fails.length > 1 ? 's':'')+' failed');
+                manager.log("\n------------------------------\n"+colors.red+"All is not well :("+colors.reset, true);
+                manager.log(manager.successes.length+' test'+(manager.successes.length > 1 ? 's':'')+' was successfull', true);
+                manager.log(manager.fails.length+' test'+(manager.fails.length > 1 ? 's':'')+' failed', true);
                 for(var i=0; i < manager.fails.length; i++)
-                    manager.log("  - "+manager.fails[i].name+" ("+manager.fails[i].message+")");
+                    manager.log("  - "+manager.fails[i].name+" ("+manager.fails[i].message+")", true);
             }
 
             manager.log("");

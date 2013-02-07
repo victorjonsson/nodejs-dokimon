@@ -21,3 +21,7 @@
 ## v 0.0.18
     - Extension of test files changed from .dokimon to .djs
     - minor bug fixes
+
+## v 0.0.19
+    - Messages about failing tests is now sent to console.error
+    - Added some coloring of messages
