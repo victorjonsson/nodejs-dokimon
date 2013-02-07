@@ -57,6 +57,7 @@ var TestManager = function(config, testFinishCallback) {
     this.successes = [];
     this.fails = [];
     this.tests = [];
+    this.executed = [];
 
     /**
      * Wrapper that makes it possible to handle the
@@ -87,24 +88,52 @@ var TestManager = function(config, testFinishCallback) {
      * Runs tests starting from current position of this.index
      */
     this.run = function() {
+        if(this.index == 0) {
+            this.executed = [];
+        }
+
+        var _self = this;
         if(config.verbose)
             this.log('Running scripts starting from '+this.index);
 
-        for(var i=this.index; i < this.tests.length; i++) {
-            // blocking request
-            if(this.tests[i].blocking) {
-                if(config.verbose)
-                    this.log('Blocking upcoming tests on index '+i+' for '+this.tests[i].name);
+        var callBlockingTest = function(currentIndex) {
+            if(config.verbose)
+                _self.log('Blocking upcoming tests on index '+currentIndex+' for '+_self.tests[currentIndex].name);
 
-                this.index = i+1;
-                var self = this;
-                this.tests[i].execute(config.host, this, config.verbose, function() {
-                    self.run();
+            _self.index = currentIndex+1;
+            _self.tests[currentIndex].execute(config.host, _self, config.verbose, function() {
+                _self.run();
+            });
+        };
+
+        for(var i=this.index; i < this.tests.length; i++) {
+            var dependingTest = this.tests[i].options.dependsOn;
+            if( dependingTest  && this.executed.indexOf(dependingTest) == -1) {
+
+                this.log('# Running depending test "'+dependingTest+'"');
+
+                this._doRunSingleTest(dependingTest, config.verbose, function() {
+                    if(_self.tests[i].blocking) {
+                        callBlockingTest(i);
+                    }
+                    else {
+                        this.tests[i].execute(config.host, _self, config.verbose);
+                        _self.run();
+                    }
                 });
+
                 break;
+
             }
-            else
-                this.tests[i].execute(config.host, this, config.verbose);
+            else {
+                // blocking request
+                if(this.tests[i].blocking) {
+                    callBlockingTest(i);
+                    break;
+                }
+                else
+                    this.tests[i].execute(config.host, this, config.verbose);
+            }
         }
     };
 
@@ -115,20 +144,49 @@ var TestManager = function(config, testFinishCallback) {
      * @param {Boolean} verbose - Optional
      */
     this.runTest = function(testName, verbose) {
+        this.executed = [];
+        this._doRunSingleTest(testName, verbose);
+    };
+
+    /**
+     * @param name
+     * @param verbose
+     * @param callback
+     * @private
+     */
+    this._doRunSingleTest = function(name, verbose, callback) {
         for(var i=0; i < this.tests.length; i++) {
-            if(this.tests[i].name == testName) {
-                this.tests[i].execute(config.host, this, config.verbose);
+            if(this.tests[i].name == name) {
+                var dependingTest = this.tests[i].options.dependsOn;
+                if( dependingTest && this.executed.indexOf(dependingTest) == -1 ) {
+                    var _self = this;
+                    this.log('# Running depending test "'+dependingTest+'"');
+                    this._doRunSingleTest(dependingTest, verbose, function() {
+                        _self.tests[i].execute(config.host, _self, verbose, function() {
+                            if( typeof callback == 'function' ) {
+                                callback();
+                            }
+                        });
+                    });
+                }
+                else {
+                    this.tests[i].execute(config.host, this, verbose, function() {
+                        if( typeof callback == 'function' ) {
+                            callback();
+                        }
+                    });
+                }
                 return;
             }
         }
 
-        throw new Error('Test not found');
+        throw new Error('Test "'+name+'" not found');
     };
 
     /**
      * @param {Object} success
      */
-    this.registerSuccessfullTest = function(success) {
+    this.registerSuccessfulTest = function(success) {
         this.successes.push(success);
         this.log('* '+success.name + ' successfull');
         _checkIfFinished(this);
@@ -138,7 +196,7 @@ var TestManager = function(config, testFinishCallback) {
      * @param {Object} fail
      * @param {Error} err - Optional
      */
-    this.registerFailedtest = function(fail, err) {
+    this.registerFailedTest = function(fail, err) {
         this.fails.push(fail);
         this.log('- '+fail.name + " FAILED! \n"+fail.message, true);
         if(err)
@@ -230,17 +288,23 @@ var Test = function(testName, options, callback, blocking) {
 
     mergeWithDefaultOptions(options);
 
+    this.options = options;
     this.blocking = blocking;
     this.name = testName;
 
     /**
      * @param {TestManager} manager
-     * @param {Boolean} verbose - Optional
-     * @param {Function} exeFinishCallback - Optional, will be called when request is finished and test callback is called
+     * @param {String} host
+     * @param {Boolean} [verbose] - Optional
+     * @param {Function} [callback] - Optional, will be called when request is finished and test callback is called
      */
-    this.execute = function(host, manager, verbose, exeFinishCallback) {
-        if(typeof exeFinishCallback != 'function')
-            exeFinishCallback = function() {};
+    this.execute = function(host, manager, verbose, callback) {
+
+        var exeFinishCallback = function() {
+            manager.executed.push(testName);
+            if( typeof callback == 'function' )
+                callback();
+        };
 
         options.host = host;
 
@@ -250,7 +314,7 @@ var Test = function(testName, options, callback, blocking) {
         if(verbose)
             manager.log("About to request "+host+" for "+testName+" with \n"+_formatJSON(options)+"\n");
 
-        var self = this;
+        var _self = this;
 
         var req = require('http').request(options, function(res) {
             var collectedBody = '';
@@ -269,6 +333,9 @@ var Test = function(testName, options, callback, blocking) {
                 var loc = res.headers.location == undefined ? res.headers.Location : res.headers.location;
                 if(loc != undefined) {
 
+                    if( loc.indexOf('/') !== 0 )
+                        loc = '/'+loc;
+
                     if(verbose)
                         manager.log('Redirecting '+testName+' to '+loc);
 
@@ -281,19 +348,19 @@ var Test = function(testName, options, callback, blocking) {
                         options.url = options.path;
                     }
 
-                    self.execute(options.host, manager, verbose, exeFinishCallback);
+                    _self.execute(options.host, manager, verbose, exeFinishCallback);
                 }
                 else {
 
                     res.url = options.path;
 
                     try {
-                        self.runCallback(res, collectedBody, verbose);
-                        manager.registerSuccessfullTest({name : testName, message:''});
+                        _self.runCallback(res, collectedBody, verbose);
+                        manager.registerSuccessfulTest({name : testName, message:''});
                         exeFinishCallback();
                     }
                     catch(e) {
-                        manager.registerFailedtest({name : testName, message:e.message}, e);
+                        manager.registerFailedTest({name : testName, message:e.message}, e);
                         exeFinishCallback();
                     }
                 }
@@ -301,13 +368,13 @@ var Test = function(testName, options, callback, blocking) {
         });
 
         req.on('error', function(e) {
-            manager.registerFailedtest({name : testName, message:''}, e);
+            manager.registerFailedTest({name : testName, message:''}, e);
             exeFinishCallback();
         });
 
         if(req.connection != undefined) {
             req.connection.setTimeout(options.timeout, function() {
-                manager.registerFailedtest({name: testName, message : 'Timeout after '+options.timeout+' ms'}, '');
+                manager.registerFailedTest({name: testName, message : 'Timeout after '+options.timeout+' ms'}, '');
                 req.abort();
                 exeFinishCallback();
             });

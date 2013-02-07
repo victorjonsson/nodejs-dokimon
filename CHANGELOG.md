@@ -25,3 +25,6 @@
 ## v 0.0.19
     - Messages about failing tests is now sent to console.error
     - Added some coloring of messages
+
+## v 0.1.0
+    - New feature: tests can now be dependent on each other
