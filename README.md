@@ -1,15 +1,15 @@
 [![build status](https://secure.travis-ci.org/victorjonsson/nodejs-dokimon.png)](http://travis-ci.org/victorjonsson/nodejs-dokimon)
 # Dokimon
 
-This is a node module used for setting up automated tests of various kinds. It may also
+This node module is used to create automated tests of various kinds. It may also
 be used as an alternative (or complement) to client test tools such as Selenium. You write your
-tests in a heartbeat and run them using a command line interface.
+tests in a heartbeat and run them using the command line.
 
 <strong>Example usages:</strong>
 
   - Verify that your online services is up and running
   - Verify that your RESTful API is responding and behaving as expected
-  - Validate that your website generates expected html code
+  - Validate that your website generates the expected html code
 
 ## Getting started
 
@@ -32,9 +32,9 @@ the properties "host", "verbose" and "testdir".
   - <strong>testdir</strong> (String) — Relative path to the directory where you have your test scripts.
   This directory should be placed in the project directory.
 
-It's possible to change all of these paremeters on the fly when using the command line interface. It's also
+It's possible to change all of these parameters on the fly when using the command line interface. It's also
 possible to completely switch to another configuration file when using the command line interface. Dokimon 
-will search for a file named config.json in current working directory if not specified when running the tests.
+will search for a file named config.json in the current working directory if not specified when running the tests.
 
 <strong>Example config.json</strong>
 
