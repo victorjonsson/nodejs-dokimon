@@ -8,7 +8,7 @@ tests in a heartbeat and run them using a command line interface.
 <strong>Example usages:</strong>
 
   - Verify that your online services is up and running
-  - Verfify that your RESTfull API is responding and behaving as expected
+  - Verify that your RESTful API is responding and behaving as expected
   - Validate that your website generates expected html code
 
 ## Getting started
@@ -18,7 +18,7 @@ Take a look at http://nodejs.org if you don't already have node and npm installe
 
 ### 2) Create project directory and install dokimon
 Create a directory where you find suitable, go to the directory in your shell interpreter and run 
-``npm install dokimon``
+``npm install -g dokimon``
 
 ### 4) Create test directory
 You write your tests in files that has the extension .djs (more information about writing the tests below).
