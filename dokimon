@@ -53,6 +53,9 @@ function mergeWithDefaultOptions(options) {
  * * * * * * * * * * * * * * * * * * * * * * * * */
 var TestManager = function(config, testFinishCallback) {
 
+    if( config.path === undefined )
+        config.path = false;
+
     this.index = 0;
     this.successes = [];
     this.fails = [];
@@ -103,21 +106,21 @@ var TestManager = function(config, testFinishCallback) {
             _self.index = currentIndex+1;
             _self.tests[currentIndex].execute(config.host, _self, config.verbose, function() {
                 _self.run();
-            });
+            }, config.path);
         };
 
         for(var i=this.index; i < this.tests.length; i++) {
             var dependingTest = this.tests[i].options.dependsOn;
-            if( dependingTest  && this.executed.indexOf(dependingTest) == -1) {
+            if( dependingTest && this.executed.indexOf(dependingTest) == -1 ) {
 
-                this.log('# Running depending test "'+dependingTest+'"');
+                this.log('# -> Running depending test "'+dependingTest+'"');
 
                 this._doRunSingleTest(dependingTest, config.verbose, function() {
                     if(_self.tests[i].blocking) {
                         callBlockingTest(i);
                     }
                     else {
-                        this.tests[i].execute(config.host, _self, config.verbose);
+                        this.tests[i].execute(config.host, _self, config.verbose, false, config.path);
                         _self.run();
                     }
                 });
@@ -132,7 +135,7 @@ var TestManager = function(config, testFinishCallback) {
                     break;
                 }
                 else
-                    this.tests[i].execute(config.host, this, config.verbose);
+                    this.tests[i].execute(config.host, this, config.verbose, false, config.path);
             }
         }
     };
@@ -141,11 +144,10 @@ var TestManager = function(config, testFinishCallback) {
      * Run a specific test in the test list
      *
      * @param {String} testName
-     * @param {Boolean} verbose - Optional
      */
-    this.runTest = function(testName, verbose) {
+    this.runTest = function(testName) {
         this.executed = [];
-        this._doRunSingleTest(testName, verbose);
+        this._doRunSingleTest(testName, config.verbose);
     };
 
     /**
@@ -155,28 +157,37 @@ var TestManager = function(config, testFinishCallback) {
      * @private
      */
     this._doRunSingleTest = function(name, verbose, callback) {
+        var test = this.getTestByName(name);
+        var dependingTest = test.options.dependsOn;
+
+        if( dependingTest && this.executed.indexOf(dependingTest) == -1 ) {
+            var _self = this;
+            this.log('# -> Running depending test "'+dependingTest+'"');
+            this._doRunSingleTest(dependingTest, verbose, function() {
+                test.execute(config.host, _self, verbose, function() {
+                    if( typeof callback == 'function' ) {
+                        callback();
+                    }
+                }, config.path);
+            });
+        }
+        else {
+            test.execute(config.host, this, verbose, function() {
+                if( typeof callback == 'function' ) {
+                    callback();
+                }
+            }, config.path);
+        }
+    };
+
+    /**
+     * @param {String} name
+     * @return {Test}
+     */
+    this.getTestByName = function(name) {
         for(var i=0; i < this.tests.length; i++) {
             if(this.tests[i].name == name) {
-                var dependingTest = this.tests[i].options.dependsOn;
-                if( dependingTest && this.executed.indexOf(dependingTest) == -1 ) {
-                    var _self = this;
-                    this.log('# Running depending test "'+dependingTest+'"');
-                    this._doRunSingleTest(dependingTest, verbose, function() {
-                        _self.tests[i].execute(config.host, _self, verbose, function() {
-                            if( typeof callback == 'function' ) {
-                                callback();
-                            }
-                        });
-                    });
-                }
-                else {
-                    this.tests[i].execute(config.host, this, verbose, function() {
-                        if( typeof callback == 'function' ) {
-                            callback();
-                        }
-                    });
-                }
-                return;
+                return this.tests[i];
             }
         }
 
@@ -298,7 +309,7 @@ var Test = function(testName, options, callback, blocking) {
      * @param {Boolean} [verbose] - Optional
      * @param {Function} [callback] - Optional, will be called when request is finished and test callback is called
      */
-    this.execute = function(host, manager, verbose, callback) {
+    this.execute = function(host, manager, verbose, callback, basePath) {
 
         var exeFinishCallback = function() {
             manager.executed.push(testName);
@@ -307,6 +318,8 @@ var Test = function(testName, options, callback, blocking) {
         };
 
         options.host = host;
+        if( basePath && options.path.indexOf(basePath) !== 0)
+            options.path = basePath+options.path;
 
         if(options.keepCookies && Test.lastCookies)
             options.headers['Cookie'] = Test.lastCookies;
@@ -331,7 +344,7 @@ var Test = function(testName, options, callback, blocking) {
                     Test.lastCookies = _setToGetCookies(res.headers['set-cookie'], Test.lastCookies ? Test.lastCookies:'');
 
                 var loc = res.headers.location == undefined ? res.headers.Location : res.headers.location;
-                if(loc != undefined) {
+                if(loc) {
 
                     if( loc.indexOf('/') !== 0 )
                         loc = '/'+loc;
@@ -343,19 +356,20 @@ var Test = function(testName, options, callback, blocking) {
                     options.headers['Content-Length'] = 0;
                     options.write = '';
                     options.path = loc;
+
                     if(options.path.indexOf(options.host) > -1) {
                         options.path = options.path.split(options.host)[1];
                         options.url = options.path;
                     }
 
-                    _self.execute(options.host, manager, verbose, exeFinishCallback);
+                    _self.execute(options.host, manager, verbose, exeFinishCallback, basePath);
                 }
                 else {
 
                     res.url = options.path;
 
                     try {
-                        _self.runCallback(res, collectedBody, verbose);
+                        _self.runCallback(res, collectedBody, manager);
                         manager.registerSuccessfulTest({name : testName, message:''});
                         exeFinishCallback();
                     }
@@ -388,10 +402,10 @@ var Test = function(testName, options, callback, blocking) {
      * Runs the test callback when request is finished
      * @param {Object} res
      * @param {String} collectedBody
-     * @param {Boolean} verbose
+     * @param {TestManager} manager
      */
-    this.runCallback = function(res, collectedBody, verbose) {
-        callback(res, collectedBody, verbose);
+    this.runCallback = function(res, collectedBody,manager) {
+        callback(res, collectedBody, manager);
     };
 
     /**

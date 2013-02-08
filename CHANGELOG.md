@@ -28,3 +28,9 @@
 
 ## v 0.1.0
     - New feature: tests can now be dependent on each other
+
+## v 0.1.3
+    - Some minor bugs fixed
+
+## v 0.1.4
+    - Now possible to define a base path to run the tests against

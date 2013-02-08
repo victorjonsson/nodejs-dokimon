@@ -42,7 +42,8 @@ will search for a file named config.json in the current working directory if not
 {
   "host" : "api.myservice.com",
   "verbose" : false,
-  "testdir" : "tests"
+  "testdir" : "tests",
+  "path" : ""
 }
 ```
 
