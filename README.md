@@ -1,9 +1,8 @@
 [![build status](https://secure.travis-ci.org/victorjonsson/nodejs-dokimon.png)](http://travis-ci.org/victorjonsson/nodejs-dokimon)
 # Dokimon
 
-This node module is used to create automated tests of various kinds. It may also
-be used as an alternative (or complement) to client test tools such as Selenium. You write your
-tests in a heartbeat and run them using the command line.
+This node module is used to create automated acceptance tests. It's also a great alternative (or complement) to 
+client test tools such as Selenium. You write your tests in a heartbeat and run them using the command line.
 
 <strong>Example usages:</strong>
 
