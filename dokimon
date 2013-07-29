@@ -115,18 +115,18 @@ var TestManager = function(config, testFinishCallback) {
 
                 this.log('# -> Running depending test "'+dependingTest+'"');
 
+                _self.current = i;
                 this._doRunSingleTest(dependingTest, config.verbose, function() {
-                    if(_self.tests[i].blocking) {
-                        callBlockingTest(i);
+                    if(_self.tests[_self.current].blocking) {
+                        callBlockingTest(_self.current);
                     }
                     else {
-                        this.tests[i].execute(config.host, _self, config.verbose, false, config.path);
+                        this.tests[_self.current].execute(config.host, _self, config.verbose, false, config.path);
                         _self.run();
                     }
                 });
 
                 break;
-
             }
             else {
                 // blocking request

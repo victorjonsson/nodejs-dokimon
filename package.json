@@ -2,9 +2,9 @@
   "author": "Victor Jonsson <kontakt@victorjonsson.se> (http://victorjonsson.se)",
   "name": "dokimon",
   "description": "This is a module used for setting up automated tests of various kinds. It may also be used as an alternative (or complement) to browser test tools such as Selenium. Write tests for a website or web service and manage them with a command line interface. Documentation available on github",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "homepage": "https://github.com/victorjonsson/nodejs-dokimon",
-  "keywords": ["test","tests","scraping","node.js", "automation", "testing"],
+  "keywords": ["test","tests","scraping", "automation", "testing", "selenium"],
   "licenses": [{
     "type": "MIT",
     "url": "https://raw.github.com/mmstud/scribe-node/master/LICENSE"
