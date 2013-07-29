@@ -121,7 +121,7 @@ var TestManager = function(config, testFinishCallback) {
                         callBlockingTest(_self.current);
                     }
                     else {
-                        this.tests[_self.current].execute(config.host, _self, config.verbose, false, config.path);
+                        _self.tests[_self.current].execute(config.host, _self, config.verbose, false, config.path);
                         _self.run();
                     }
                 });
